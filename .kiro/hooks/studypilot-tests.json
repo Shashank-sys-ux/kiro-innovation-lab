@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "StudyPilot tests on backend save",
+      "description": "Run StudyPilot property tests whenever a backend Python file is saved.",
+      "trigger": "PostFileSave",
+      "matcher": "^backend/.*\\.py$",
+      "action": {
+        "type": "command",
+       "command": "backend\\.venv\\Scripts\\python.exe -m pytest backend/tests/test_study_plan_properties.py -q"
+      }
+    }
+  ]
+}
