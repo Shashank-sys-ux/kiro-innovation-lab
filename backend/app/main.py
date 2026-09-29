@@ -1,11 +1,15 @@
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db
 from .models import Question, Topic
-from .study_plan import build_plan
+from .study_plan import (
+    PlanValidationError,
+    StudyPlanRequest,
+    StudyPlanResponse,
+    build_plan,
+)
 
 
 Base.metadata.create_all(bind=engine)
@@ -28,28 +32,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-# -------------------------
-# Study Plan Schemas
-# -------------------------
-
-class StudyPlanRequest(BaseModel):
-    subject: str = Field(min_length=1)
-    topics: list[str]
-    days: int = Field(gt=0)
-    hours_per_day: float = Field(gt=0)
-
-
-class StudyPlanDayResponse(BaseModel):
-    day: int
-    topics: list[str]
-    hours: float
-
-
-class StudyPlanResponse(BaseModel):
-    subject: str
-    days: list[StudyPlanDayResponse]
 
 
 # -------------------------
@@ -133,48 +115,23 @@ def get_questions(db: Session = Depends(get_db)):
     "/study-plan",
     response_model=StudyPlanResponse,
 )
-def generate_study_plan(request: StudyPlanRequest):
-    # Validate subject
-    if not request.subject.strip():
-        raise HTTPException(
-            status_code=422,
-            detail="Subject cannot be blank",
-        )
-
-    # Remove empty topic names
-    topics = [
-        topic.strip()
-        for topic in request.topics
-        if topic.strip()
-    ]
-
-    # Validate topics
-    if not topics:
-        raise HTTPException(
-            status_code=422,
-            detail="Topics cannot be empty",
-        )
-
+def generate_study_plan(
+    request: StudyPlanRequest,
+) -> StudyPlanResponse:
     try:
-        plan = build_plan(
-            topics=topics,
-            days=request.days,
-            hours_per_day=request.hours_per_day,
+        daily = build_plan(
+            request.subject,
+            request.topics,
+            request.days,
+            request.hours_per_day,
         )
-    except ValueError as exc:
+    except PlanValidationError as exc:
         raise HTTPException(
             status_code=422,
             detail=str(exc),
-        )
+        ) from exc
 
     return StudyPlanResponse(
-        subject=request.subject.strip(),
-        days=[
-            StudyPlanDayResponse(
-                day=item.day,
-                topics=item.topics,
-                hours=item.hours,
-            )
-            for item in plan
-        ],
+        subject=request.subject,
+        days=daily,
     )

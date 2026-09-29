@@ -1,0 +1,22 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "studyplan",
+  "version": "0.1.0",
+  "description": "Reusable guidance and workflows for StudyPilot's study-plan generation feature: work with backend/app/study_plan.py and the /study-plan API while preserving planning invariants.",
+  "license": "MIT",
+  "keywords": [
+    "studypilot",
+    "study-plan",
+    "study plan generator",
+    "build_plan",
+    "planning invariants",
+    "hypothesis",
+    "pytest",
+    "fastapi",
+    "hours_per_day",
+    "HOURS_PER_TOPIC"
+  ],
+  "author": {
+    "name": "StudyPilot"
+  }
+}
